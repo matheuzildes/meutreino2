@@ -1,5 +1,5 @@
 // PASSO IMPORTANTE: Muda a versão do cache para forçar a atualização!
-const CACHE_NAME = 'app-treino-cache-v2';
+const CACHE_NAME = 'app-treino-cache-v3';
 
 // Ficheiros essenciais para o arranque da aplicação.
 const urlsToCache = [
