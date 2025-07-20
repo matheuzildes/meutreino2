@@ -1,5 +1,7 @@
+// src/components/HistoryTab.tsx
+
 import React, { useState, useEffect } from 'react';
-import { Calendar, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Edit, Trash2, Flame } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,16 +9,29 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { parseLocalDateString, formatDisplayDate } from '@/lib/date-utils'; // <-- IMPORTAÇÃO ATUALIZADA
-import { Flame } from 'lucide-react'; // Adicionar ícone de chama
-import { getMetValue } from '@/lib/met-values'; // Importar nosso banco de METs
+import { parseLocalDateString, formatDisplayDate } from '@/lib/date-utils';
+import { getMetValue } from '@/lib/met-values';
 
+// INTERFACE ATUALIZADA - AQUI ESTÁ A CORREÇÃO
 interface Exercise {
-  id: string; name: string; sets: number; reps: string; weight: string; notes?: string;
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  weight: string;
+  notes?: string;
+  type?: 'musculacao' | 'cardio';
+  duration?: string;
+  distance?: string;
 }
 
 interface Workout {
-  id: string; name: string; date: string; exercises: Exercise[]; notes?: string; duration?: number;
+  id: string;
+  name: string;
+  date: string;
+  exercises: Exercise[];
+  notes?: string;
+  duration?: number;
 }
 
 const HistoryTab = () => {
@@ -25,56 +40,6 @@ const HistoryTab = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [userWeight, setUserWeight] = useState<number | null>(null);
 
-useEffect(() => {
-  const savedWorkouts = localStorage.getItem('gym-workouts');
-  if (savedWorkouts) {
-    //...
-  }
-  // Carregar o peso do usuário
-  const savedProfile = localStorage.getItem('gym-user-profile');
-  if (savedProfile) {
-    setUserWeight(JSON.parse(savedProfile).weight);
-  }
-}, []);
-
-// NOVO: Função para calcular calorias
-const calculateWorkoutCalories = (workout: Workout) => {
-  if (!userWeight) return 0;
-
-  return workout.exercises.reduce((totalCalories, exercise) => {
-    const met = getMetValue(exercise.name);
-    // Assumindo que a duração de CADA exercício é o 'duration' do exercício.
-    // Se não houver, podemos estimar (ex: 1 min por série)
-    const durationInMinutes = parseFloat(exercise.duration || (exercise.sets * 1.5).toString());
-
-    if (isNaN(durationInMinutes) || durationInMinutes <= 0) {
-      return totalCalories;
-    }
-    
-    // Fórmula: MET * Peso (kg) * Duração (horas)
-    const caloriesForExercise = met * userWeight * (durationInMinutes / 60);
-    return totalCalories + caloriesForExercise;
-  }, 0);
-};
-
-// ... dentro do return, no mapeamento dos workouts
-<div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-  <span>{formatDisplayDate(workout.date)}</span>
-  <span>•</span><span>{workout.exercises.length} exercícios</span>
-  <span>•</span><span>{getTotalVolume(workout).toFixed(0)}kg volume</span>
-  
-  {/* NOVO: Exibição de calorias */}
-  {userWeight && (
-    <>
-      <span>•</span>
-      <span className="flex items-center">
-        <Flame className="w-4 h-4 mr-1 text-orange-500" />
-        {calculateWorkoutCalories(workout).toFixed(0)} kcal
-      </span>
-    </>
-  )}
-</div>
-
   useEffect(() => {
     const savedWorkouts = localStorage.getItem('gym-workouts');
     if (savedWorkouts) {
@@ -82,7 +47,27 @@ const calculateWorkoutCalories = (workout: Workout) => {
       parsedWorkouts.sort((a, b) => parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime());
       setWorkouts(parsedWorkouts);
     }
+    const savedProfile = localStorage.getItem('gym-user-profile');
+    if (savedProfile) {
+      setUserWeight(JSON.parse(savedProfile).weight);
+    }
   }, []);
+
+  const calculateWorkoutCalories = (workout: Workout): number => {
+    if (!userWeight) return 0;
+
+    return workout.exercises.reduce((totalCalories, exercise) => {
+      const met = getMetValue(exercise.name);
+      const durationInMinutes = parseFloat(exercise.duration || (exercise.sets * 1.5).toString());
+
+      if (isNaN(durationInMinutes) || durationInMinutes <= 0) {
+        return totalCalories;
+      }
+      
+      const caloriesForExercise = met * userWeight * (durationInMinutes / 60);
+      return totalCalories + caloriesForExercise;
+    }, 0);
+  };
 
   const updateWorkout = (updatedWorkout: Workout) => {
     const updatedWorkouts = workouts.map(w => w.id === updatedWorkout.id ? updatedWorkout : w);
@@ -138,9 +123,19 @@ const calculateWorkoutCalories = (workout: Workout) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg">{workout.name}</CardTitle>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                      <span>{formatDisplayDate(workout.date)}</span> {/* <-- USANDO A FUNÇÃO CENTRAL */}
-                      <span>•</span><span>{workout.exercises.length} exercícios</span><span>•</span><span>{getTotalVolume(workout).toFixed(0)}kg volume</span>
+                    <div className="flex items-center flex-wrap space-x-2 text-sm text-muted-foreground mt-1">
+                      <span>{formatDisplayDate(workout.date)}</span>
+                      <span>•</span><span>{workout.exercises.length} exercícios</span>
+                      <span>•</span><span>{getTotalVolume(workout).toFixed(0)}kg</span>
+                      {userWeight && calculateWorkoutCalories(workout) > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center">
+                            <Flame className="w-4 h-4 mr-1 text-orange-500" />
+                            {calculateWorkoutCalories(workout).toFixed(0)} kcal
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex space-x-2">
