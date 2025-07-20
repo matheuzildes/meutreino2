@@ -1,0 +1,21 @@
+{
+  "name": "App de Treino",
+  "short_name": "App Treino",
+  "description": "O seu companheiro de treino para registar e acompanhar o progresso.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
