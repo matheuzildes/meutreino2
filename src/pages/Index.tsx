@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Calendar, TrendingUp, BookOpen, Plus } from 'lucide-react';
+import { Dumbbell, Calendar, TrendingUp, BookOpen, Plus, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WorkoutTab from '@/components/WorkoutTab';
@@ -16,6 +16,7 @@ const Index = () => {
     { id: 'history', icon: Calendar, label: 'Histórico' },
     { id: 'stats', icon: TrendingUp, label: 'Stats' },
     { id: 'diary', icon: BookOpen, label: 'Diário' },
+    { id: 'profile', icon: User, label: 'Perfil' },
   ];
 
   const renderActiveTab = () => {
@@ -30,6 +31,8 @@ const Index = () => {
         return <DiaryTab />;
       default:
         return <WorkoutTab />;
+        case 'profile':
+    return <ProfileTab />;
     }
   };
 

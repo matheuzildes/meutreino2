@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { parseLocalDateString, formatDisplayDate } from '@/lib/date-utils'; // <-- IMPORTAÇÃO ATUALIZADA
+import { Flame } from 'lucide-react'; // Adicionar ícone de chama
+import { getMetValue } from '@/lib/met-values'; // Importar nosso banco de METs
 
 interface Exercise {
   id: string; name: string; sets: number; reps: string; weight: string; notes?: string;
@@ -21,6 +23,57 @@ const HistoryTab = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [userWeight, setUserWeight] = useState<number | null>(null);
+
+useEffect(() => {
+  const savedWorkouts = localStorage.getItem('gym-workouts');
+  if (savedWorkouts) {
+    //...
+  }
+  // Carregar o peso do usuário
+  const savedProfile = localStorage.getItem('gym-user-profile');
+  if (savedProfile) {
+    setUserWeight(JSON.parse(savedProfile).weight);
+  }
+}, []);
+
+// NOVO: Função para calcular calorias
+const calculateWorkoutCalories = (workout: Workout) => {
+  if (!userWeight) return 0;
+
+  return workout.exercises.reduce((totalCalories, exercise) => {
+    const met = getMetValue(exercise.name);
+    // Assumindo que a duração de CADA exercício é o 'duration' do exercício.
+    // Se não houver, podemos estimar (ex: 1 min por série)
+    const durationInMinutes = parseFloat(exercise.duration || (exercise.sets * 1.5).toString());
+
+    if (isNaN(durationInMinutes) || durationInMinutes <= 0) {
+      return totalCalories;
+    }
+    
+    // Fórmula: MET * Peso (kg) * Duração (horas)
+    const caloriesForExercise = met * userWeight * (durationInMinutes / 60);
+    return totalCalories + caloriesForExercise;
+  }, 0);
+};
+
+// ... dentro do return, no mapeamento dos workouts
+<div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+  <span>{formatDisplayDate(workout.date)}</span>
+  <span>•</span><span>{workout.exercises.length} exercícios</span>
+  <span>•</span><span>{getTotalVolume(workout).toFixed(0)}kg volume</span>
+  
+  {/* NOVO: Exibição de calorias */}
+  {userWeight && (
+    <>
+      <span>•</span>
+      <span className="flex items-center">
+        <Flame className="w-4 h-4 mr-1 text-orange-500" />
+        {calculateWorkoutCalories(workout).toFixed(0)} kcal
+      </span>
+    </>
+  )}
+</div>
 
   useEffect(() => {
     const savedWorkouts = localStorage.getItem('gym-workouts');

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Calendar, Target, Zap } from 'lucide-react';
+import { TrendingUp, Calendar, Target, Zap, Milestone } from 'lucide-react'; // NOVO: Adicionado ícone Milestone
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -12,6 +11,9 @@ interface Exercise {
   reps: string;
   weight: string;
   notes?: string;
+  type?: 'musculacao' | 'cardio'; // Tipo do exercício
+  duration?: string;
+  distance?: string; // Distância para cardio
 }
 
 interface Workout {
@@ -27,14 +29,15 @@ const StatsTab = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
   const [availableExercises, setAvailableExercises] = useState<string[]>([]);
+  // NOVO: Estado para guardar o tipo do exercício selecionado
+  const [selectedExerciseType, setSelectedExerciseType] = useState<'musculacao' | 'cardio'>('musculacao');
 
   useEffect(() => {
     const savedWorkouts = localStorage.getItem('gym-workouts');
     if (savedWorkouts) {
-      const parsedWorkouts = JSON.parse(savedWorkouts);
+      const parsedWorkouts: Workout[] = JSON.parse(savedWorkouts);
       setWorkouts(parsedWorkouts);
       
-      // Extrair todos os exercícios únicos
       const exercises = new Set<string>();
       parsedWorkouts.forEach((workout: Workout) => {
         workout.exercises.forEach((exercise: Exercise) => {
@@ -50,6 +53,23 @@ const StatsTab = () => {
     }
   }, []);
 
+  // NOVO: Efeito para detectar e atualizar o tipo do exercício selecionado
+  useEffect(() => {
+    if (selectedExercise && workouts.length > 0) {
+      // Procura o tipo do exercício em todos os treinos
+      for (const workout of workouts) {
+        const exercise = workout.exercises.find(ex => ex.name === selectedExercise);
+        if (exercise && exercise.type) {
+          setSelectedExerciseType(exercise.type);
+          return;
+        }
+      }
+      // Se não encontrar, assume 'musculacao' como padrão
+      setSelectedExerciseType('musculacao');
+    }
+  }, [selectedExercise, workouts]);
+
+
   const getProgressionData = (exerciseName: string) => {
     const exerciseData: any[] = [];
     
@@ -58,13 +78,16 @@ const StatsTab = () => {
       .forEach((workout) => {
         const exercise = workout.exercises.find(ex => ex.name === exerciseName);
         if (exercise) {
-          const maxWeight = parseFloat(exercise.weight) || 0;
+          const value = selectedExerciseType === 'cardio'
+            ? parseFloat(exercise.distance || '0')
+            : parseFloat(exercise.weight) || 0;
+
           exerciseData.push({
             date: workout.date,
-            weight: maxWeight,
+            value: value, // ALTERADO: Usando uma chave genérica 'value'
             reps: exercise.reps,
             sets: exercise.sets,
-            volume: maxWeight * parseFloat(exercise.reps) * exercise.sets,
+            volume: (parseFloat(exercise.weight) || 0) * parseFloat(exercise.reps) * exercise.sets,
             dateFormatted: new Date(workout.date).toLocaleDateString('pt-BR', { 
               day: '2-digit', 
               month: '2-digit' 
@@ -89,7 +112,6 @@ const StatsTab = () => {
       }, 0);
     }, 0);
 
-    // Frequência semanal (últimas 4 semanas)
     const fourWeeksAgo = new Date();
     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
     const recentWorkouts = workouts.filter(workout => 
@@ -97,7 +119,6 @@ const StatsTab = () => {
     );
     const weeklyFrequency = recentWorkouts.length / 4;
 
-    // Exercício mais realizado
     const exerciseCount: { [key: string]: number } = {};
     workouts.forEach(workout => {
       workout.exercises.forEach(exercise => {
@@ -121,11 +142,14 @@ const StatsTab = () => {
   const stats = getWorkoutStats();
   const progressionData = selectedExercise ? getProgressionData(selectedExercise) : [];
 
+  // ALTERADO: Título dinâmico para o gráfico
+  const chartTitle = selectedExerciseType === 'cardio' ? 'Progressão de Distância' : 'Progressão de Carga';
+  const yAxisLabel = selectedExerciseType === 'cardio' ? 'Distância (km)' : 'Peso (kg)';
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Estatísticas</h2>
 
-      {/* Cards de Resumo */}
       {stats && (
         <div className="grid grid-cols-2 gap-4">
           <Card>
@@ -139,7 +163,6 @@ const StatsTab = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Volume Total</CardTitle>
@@ -151,7 +174,6 @@ const StatsTab = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Frequência Semanal</CardTitle>
@@ -163,7 +185,6 @@ const StatsTab = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Exercício Favorito</CardTitle>
@@ -181,10 +202,9 @@ const StatsTab = () => {
         </div>
       )}
 
-      {/* Progressão de Carga */}
       <Card>
         <CardHeader>
-          <CardTitle>Progressão de Carga</CardTitle>
+          <CardTitle>{chartTitle}</CardTitle> {/* ALTERADO */}
           <Select value={selectedExercise} onValueChange={setSelectedExercise}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um exercício" />
@@ -212,6 +232,7 @@ const StatsTab = () => {
                   <YAxis 
                     fontSize={12}
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: yAxisLabel, angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }} // NOVO: Label dinâmico para o eixo Y
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -219,17 +240,16 @@ const StatsTab = () => {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
+                    // ALTERADO: Formatação do tooltip dinâmica
                     formatter={(value: any, name: string) => [
-                      name === 'weight' ? `${value}kg` : 
-                      name === 'volume' ? `${value}kg` : value,
-                      name === 'weight' ? 'Peso' :
-                      name === 'volume' ? 'Volume' : name
+                      selectedExerciseType === 'cardio' ? `${value} km` : `${value} kg`,
+                      selectedExerciseType === 'cardio' ? 'Distância' : 'Peso'
                     ]}
                     labelFormatter={(label) => `Data: ${label}`}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="weight" 
+                    dataKey="value" // ALTERADO: Usando a chave genérica 'value'
                     stroke="hsl(var(--primary))" 
                     strokeWidth={3}
                     dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
@@ -238,27 +258,53 @@ const StatsTab = () => {
                 </LineChart>
               </ResponsiveContainer>
               
-              {/* Estatísticas do exercício selecionado */}
+              {/* ALTERADO: Cards de estatísticas dinâmicos */}
               <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">
-                    {Math.max(...progressionData.map(d => d.weight))}kg
-                  </p>
-                  <p className="text-xs text-muted-foreground">Peso Máximo</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-primary">
-                    {progressionData.length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Sessões</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-primary">
-                    {Math.max(...progressionData.map(d => d.volume)).toFixed(0)}kg
-                  </p>
-                  <p className="text-xs text-muted-foreground">Volume Máximo</p>
-                </div>
+                {selectedExerciseType === 'cardio' ? (
+                  <>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">
+                        {Math.max(...progressionData.map(d => d.value))} km
+                      </p>
+                      <p className="text-xs text-muted-foreground">Distância Máx.</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">
+                        {progressionData.length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Sessões</p>
+                    </div>
+                     <div>
+                       <p className="text-2xl font-bold text-primary">
+                         {(progressionData.reduce((acc, d) => acc + d.value, 0) / progressionData.length).toFixed(1)} km
+                       </p>
+                       <p className="text-xs text-muted-foreground">Média Distância</p>
+                     </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">
+                        {Math.max(...progressionData.map(d => d.value))}kg
+                      </p>
+                      <p className="text-xs text-muted-foreground">Peso Máximo</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">
+                        {progressionData.length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Sessões</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">
+                        {Math.max(...progressionData.map(d => d.volume)).toFixed(0)}kg
+                      </p>
+                      <p className="text-xs text-muted-foreground">Volume Máximo</p>
+                    </div>
+                  </>
+                )}
               </div>
+
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
