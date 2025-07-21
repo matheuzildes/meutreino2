@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "114739604424",
+    "project_id": "appmeutreino-6ea19",
+    "storage_bucket": "appmeutreino-6ea19.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114739604424:android:c2d17aa15e83105e2f2efd",
+        "android_client_info": {
+          "package_name": "meuapp.treino2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "114739604424-qcqivpd6n8erm2v6mskhmadq6h8sk5jj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "meuapp.treino2",
+            "certificate_hash": "f099d8645aff0aacd2c0e0d812316f5a71d3b031"
+          }
+        },
+        {
+          "client_id": "114739604424-uv8cvce4mkodtnbn4qa5saumc71rhamt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBwdT87sMlATbYaMoSDSiPpgAGtQ0USIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "114739604424-uv8cvce4mkodtnbn4qa5saumc71rhamt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
