@@ -1,16 +1,34 @@
-// src/pages/Index.tsx
-
 import React, { useState } from 'react';
-import { Dumbbell, Calendar, TrendingUp, BookOpen, User } from 'lucide-react';
+import { Dumbbell, Calendar, TrendingUp, BookOpen, User, LogIn } from 'lucide-react';
 import WorkoutTab from '@/components/WorkoutTab';
 import HistoryTab from '@/components/HistoryTab';
 import StatsTab from '@/components/StatsTab';
 import DiaryTab from '@/components/DiaryTab';
-import ProfileTab from '@/components/ProfileTab'; // Garanta que esta linha de importação exista
+import ProfileTab from '@/components/ProfileTab';
+import { useAuth } from '@/contexts/AuthContext';
+import { loginComGoogle } from '@/firebase';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('workout');
+  const { currentUser } = useAuth(); // Pega o status do usuário (logado ou não)
 
+  // Se não houver usuário, mostra a tela de login
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center p-4 bg-background">
+        <Dumbbell className="w-16 h-16 text-primary mb-4" />
+        <h1 className="text-3xl font-bold mb-2 text-foreground">Bem-vindo ao Gym Tracker</h1>
+        <p className="text-muted-foreground mb-6">Faça login com sua conta Google para salvar e sincronizar seus treinos na nuvem.</p>
+        <Button onClick={loginComGoogle} size="lg">
+          <LogIn className="w-4 h-4 mr-2" />
+          Entrar com Google
+        </Button>
+      </div>
+    );
+  }
+
+  // Se o usuário estiver logado, mostra o app normalmente
   const tabs = [
     { id: 'workout', icon: Dumbbell, label: 'Treino', component: <WorkoutTab /> },
     { id: 'history', icon: Calendar, label: 'Histórico', component: <HistoryTab /> },
@@ -26,7 +44,6 @@ const Index = () => {
       </div>
 
       <div className="pb-20 px-4 pt-4 min-h-[calc(100vh-80px)]">
-        {/* Lógica de renderização simplificada */}
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
 
