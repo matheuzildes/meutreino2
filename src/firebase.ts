@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 
 // IMPORTANTE: Substitua este objeto pelas suas próprias credenciais do Firebase
 // que você copiou do console do Firebase ao registrar o app.
@@ -16,6 +17,7 @@ const firebaseConfig = {
 
 // Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // Exporta os serviços que vamos usar no resto do app
 export const auth = getAuth(app);
@@ -31,5 +33,5 @@ export const loginComGoogle = () => {
 
 // Função para fazer logout
 export const logout = () => {
-  return signOut(auth);
+    return signOut(auth);
 };
